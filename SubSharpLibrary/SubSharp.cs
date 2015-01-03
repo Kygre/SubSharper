@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections;
-using Windows.UI.Popups;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.UI.Popups;
 using Windows.Web.Http;
 
 namespace SubSharpLibrary.Client
@@ -136,10 +136,34 @@ namespace SubSharpLibrary.Client
         {
 
             action = "ping.view";
+            return gen_SubResponse();
+        }
+
+        private SubResponse gen_SubResponse()
+        {
             String http = this.url + action + this.parameters;
+            
             Debug.WriteLine("URL = " + http);
             var get = get_HTML(http).Result;
+
+            // dispose of actions and paremeters
+            action = "";
+            
             return new SubResponse(get);
+        }
+
+        /// <summary>
+        /// A dictionary of artist elements
+        /// With key = Atrribute.Value of keyType in artist element tag
+        /// </summary>
+        /// <returns>a SubResponse containing a Dictionary response</returns>
+        public Dictionary<String, Dictionary<String, String>> getArtists(String keyType)
+        {
+            action = "getArtists.view";
+            
+            return gen_SubResponse().Result_To_Attribute_Dict("artist", keyType);
+            
+            
         }
 
         /// <summary>
@@ -165,6 +189,26 @@ namespace SubSharpLibrary.Client
             return sb.ToString(); // returns: "48656C6C6F20776F726C64" for "Hello world"
         }
 
-       
+        public void print(Dictionary<String, Dictionary<String, String>> dict)
+        {
+            foreach (String name in dict.Keys)
+            {
+                Debug.WriteLine("Key - " + name);
+
+                Dictionary<String, String> args;
+
+                if (dict.TryGetValue(name, out args))
+                {
+                    foreach (KeyValuePair<string, string> kvp in args)
+                    {
+                        Debug.WriteLine(" -- Value " + kvp.Key.ToString() + " -- " + kvp.Value.ToString());
+                    }
+
+                }
+
+
+            }
+        }
     }
+
 }

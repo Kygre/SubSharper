@@ -14,6 +14,7 @@ namespace SubSharpLibrary.Exceptions
 
         private ErrorCode code;
         private String message;
+        private string p;
 
         public ErrorCode get_SubsonicErrorCode
         {
@@ -57,6 +58,13 @@ namespace SubSharpLibrary.Exceptions
 
         public SubSharpException(string message, Exception inner)
             : base(message, inner)
+        {
+
+
+        }
+
+        public SubSharpException(string message)
+            : base(message)
         {
 
 
