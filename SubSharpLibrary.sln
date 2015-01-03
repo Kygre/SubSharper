@@ -5,9 +5,9 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubSharpLibrary", "SubSharpLibrary\SubSharpLibrary.csproj", "{FB2A270D-FE2B-4216-B5F3-8B8FE2347CF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubbyTesters", "..\BetterSubSharp\SubbyTesters\SubbyTesters.csproj", "{5880C79A-B12C-48F1-A516-4D241440A49B}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitFolder", "GitFolder", "{0E607118-8C80-4F9F-ACC6-99C50D7A44C1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SubbyTesters", "SubbyTesters\SubbyTesters.csproj", "{5880C79A-B12C-48F1-A516-4D241440A49B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +59,5 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FB2A270D-FE2B-4216-B5F3-8B8FE2347CF7} = {0E607118-8C80-4F9F-ACC6-99C50D7A44C1}
-		{5880C79A-B12C-48F1-A516-4D241440A49B} = {0E607118-8C80-4F9F-ACC6-99C50D7A44C1}
 	EndGlobalSection
 EndGlobal
