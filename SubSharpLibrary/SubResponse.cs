@@ -20,10 +20,9 @@ namespace SubSharpLibrary.Client
     /// </summary>
     public class SubResponse
     {
-        private string result;
+        
         private bool ok;
         private XDocument Xresult;
-        private Dictionary<String, Dictionary<String, String>> data;
         private const String restApi = "{http://subsonic.org/restapi}subsonic-response";
 
         // for Querys that do not return data

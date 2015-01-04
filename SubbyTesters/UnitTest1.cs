@@ -4,6 +4,7 @@ using SubSharpLibrary.Exceptions;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Text;
 
 namespace SubSharpLibrary.Tests
 {
@@ -22,7 +23,14 @@ namespace SubSharpLibrary.Tests
 
         private static SubSharp sharp; // for testing supported version
 
+        // for Testing ON Active Server -- Check Daily
+
         private static int Total_Artist = 326;
+        private static int Total_Test_Album = 15;
+        private static String Test_Artist_Id = "721";
+
+
+
 
         private static SubSharp sharp_beta; // for testing subsonic beta version
 
@@ -69,8 +77,6 @@ namespace SubSharpLibrary.Tests
 
 
 
-
-
         // test ping for SubSonic response with html call
         /// <summary>
         /// Uses Global Field sharp to test ping response isOk using HTML
@@ -88,9 +94,26 @@ namespace SubSharpLibrary.Tests
 
         }
 
+
+        [TestMethod]
+        public void test_getArtist()
+        {
+            var artists = sharp.getArtists("id");
+
+            
+            
+            
+            string msg = "Using key --" + Test_Artist_Id + "--";
+
+            Debug.WriteLine(msg);
+
+            var result = sharp.getArtist("id", Test_Artist_Id);
+
+            Assert.AreEqual( Total_Test_Album , result.Count, "Albums count not equal");
+
+        }
         // check if returns xml containing artists
         // test can total count depending on server
-        
         [TestMethod]
         public void test_getArtists()
         {
@@ -172,7 +195,82 @@ namespace SubSharpLibrary.Tests
                 Assert.IsTrue(response.get_isOk);
             }
 
-            // tests get Dictionary withouth HTML call
+            /// <summary>
+            /// Test get to get Albums without HTML Call
+            /// </summary>
+            [TestMethod]
+            public void test_GetArtist_Response()
+            {
+                String albumResponse = "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"ok\" version=\"1.8.0\">\r\n<artist id=\"5432\" name=\"AC/DC\" coverArt=\"ar-5432\" albumCount=\"15\">\r\n<album id=\"11047\" name=\"Back In Black\" coverArt=\"al-11047\" songCount=\"10\" created=\"2004-11-08T23:33:11\" duration=\"2534\" artist=\"AC/DC\" artistId=\"5432\"/>\r\n</artist>\r\n</subsonic-response>";
+
+                var response = new SubResponse(albumResponse);
+
+                var test_dict = new Dictionary<String, Dictionary<String, String>>();
+
+
+                
+
+                var test_inner_dict = new Dictionary<String, String>();
+
+                test_inner_dict.Add("id", "11047");
+                test_inner_dict.Add("name" , "Back In Black");
+                test_inner_dict.Add("coverArt", "al-11047");
+                test_inner_dict.Add("songCount", "10");
+                test_inner_dict.Add("created", "2004-11-08T23:33:11");
+                test_inner_dict.Add("duration", "2534");
+                test_inner_dict.Add("artist", "AC/DC");
+                test_inner_dict.Add("artistId", "5432");
+
+                test_dict.Add("11047", test_inner_dict);
+
+                // test Dicts
+
+                Assert.IsTrue(response.get_isOk);
+
+                #region // for debugging
+                Debug.WriteLine("printing dict");
+
+                Debug.WriteLine("Printing Actual Dict\n");
+
+
+                // Call To Get Dict
+                var dict = response.Result_To_Attribute_Dict("album", "id");
+                print(dict);
+
+
+                Debug.WriteLine("\nPrinting Test Dic");
+
+                print(test_dict);
+
+                #endregion
+
+
+                List<string> keyList;
+                List<string> test_keyList;
+                List<string> inner_dict_keys;
+                List<string> inner_dict_values;
+                List<string> test_inner_values;
+                List<string> test_inner_keys;
+
+
+                NestedDictionary_To_Lists(test_dict, dict, out keyList, out test_keyList, out inner_dict_keys, out inner_dict_values, out test_inner_values, out test_inner_keys);
+
+
+                
+                CollectionAssert.AreEqual(test_keyList, keyList, "KEYS NOT EQUAL");
+
+                CollectionAssert.AreEqual(test_inner_keys, inner_dict_keys, "inner Dict keys not equal");
+                CollectionAssert.AreEqual(test_inner_values, inner_dict_values, " inner value not equal");
+
+
+                // keys are equal
+
+
+
+
+            }
+
+            // tests get Dictionary without HTML call
             /// <summary>
             /// Iffy dictionary checker
             /// Tried using CollectionAssert for dictionaries but failed miserably
@@ -181,13 +279,13 @@ namespace SubSharpLibrary.Tests
             [TestMethod]
             public void test_Dictionary_Of_Atrribute_Elements()
             {
-                String xdoc = "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"ok\" version=\"1.10.2\"> </subsonic-response>";
+             
 
                 String artist = "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"ok\" version=\"1.10.1\">\r\n<artists ignoredArticles=\"The El La Los Las Le Les\">\r\n<index name=\"A\">\r\n<artist id=\"5449\" name=\"A-Ha\" coverArt=\"ar-5449\" albumCount=\"4\"/>\r\n</index>\r\n</artists>\r\n</subsonic-response>";
 
 
                 var response = new SubResponse(artist);
-
+                
                 var test_dict = new Dictionary<String, Dictionary<String, String>>();
 
 
@@ -201,33 +299,70 @@ namespace SubSharpLibrary.Tests
 
                 test_dict.Add("5449", test_inner_dict);
 
+                // test Dicts
+
                 Assert.IsTrue(response.get_isOk);
 
-                //Assert.AreEqual(test_dict, response.Result_To_Attribute_Dict("artists", "id"));
-
-
+                #region // for debugging
                 Debug.WriteLine("printing dict");
 
                 var dict = response.Result_To_Attribute_Dict("artist", "id");
+
+
                 Debug.WriteLine("Printing Actual Dict\n");
                 print(dict);
+
                 Debug.WriteLine("\nPrinting Test Dic");
                 print(test_dict);
 
+                #endregion
 
 
-                List<string> keyList = new List<string>(dict.Keys);
-                List<string> test_keyList = new List<string>(test_dict.Keys);
+                List<string> keyList;
+                List<string> test_keyList;
+                List<string> inner_dict_keys;
+                List<string> inner_dict_values;
+                List<string> test_inner_values;
+                List<string> test_inner_keys;
+
+
+                NestedDictionary_To_Lists(test_dict, dict, out keyList, out test_keyList, out inner_dict_keys, out inner_dict_values, out test_inner_values, out test_inner_keys);
+
+
+
+                CollectionAssert.AreEqual(test_keyList, keyList, "KEYS NOT EQUAL");
+
+
+                CollectionAssert.AreEqual(test_inner_keys, inner_dict_keys, "inner Dict keys not equal");
+                CollectionAssert.AreEqual(test_inner_values, inner_dict_values, " inner value not equal");
+
+
+                // keys are equal
+
+            }
+
+            private static void NestedDictionary_To_Lists(Dictionary<string, Dictionary<string, string>> test_dict, Dictionary<string, Dictionary<string, string>> dict, out List<string> keyList, out List<string> test_keyList, out List<string> inner_dict_keys, out List<string> inner_dict_values, out List<string> test_inner_values, out List<string> test_inner_keys)
+            {
+
+
+                keyList = new List<string>(dict.Keys);
+                test_keyList = new List<string>(test_dict.Keys);
 
 
 
                 // convert values to List of Dictionaries
 
                 var valList = new List<Dictionary<string, string>>();
-                var inner_dict_keys = new List<string>();
-                var inner_dict_values = new List<string>();
-                var test_inner_values = new List<string>();
-                var test_inner_keys = new List<string>();
+
+
+
+
+
+                inner_dict_keys = new List<string>();
+                inner_dict_values = new List<string>();
+
+                test_inner_values = new List<string>();
+                test_inner_keys = new List<string>();
 
 
                 foreach (KeyValuePair<string, Dictionary<string, string>> kvp in dict)
@@ -249,17 +384,10 @@ namespace SubSharpLibrary.Tests
                     }
                 }
 
-
-                CollectionAssert.AreEqual(test_keyList, keyList, "KEYS NOT EQUAL");
-
-
-                CollectionAssert.AreEqual(test_inner_keys, inner_dict_keys, "inner Dict keys not equal");
-                CollectionAssert.AreEqual(test_inner_values, inner_dict_values, " inner value not equal");
-
-
-                // keys are equal
-
+               
             }
+
+           
 
 
             public void print(Dictionary<String, Dictionary<String, String>> dict)

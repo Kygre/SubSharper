@@ -24,6 +24,7 @@ namespace SubSharpLibrary.Exceptions
 
         public enum ErrorCode
         {
+            GENERIC_SUBSHARP_EXCEPTION = 100,
             GENERIC = 0,
             PARAMETERS_MISSING = 10,
             REST_CLIENT_INCOMPATILE = 20,
@@ -60,6 +61,14 @@ namespace SubSharpLibrary.Exceptions
             : base(message, inner)
         {
 
+
+        }
+
+
+        public SubSharpException(string message, SubSharpException.ErrorCode desiredEnum)
+            : base(message)
+        {
+            this.code = desiredEnum;
 
         }
 

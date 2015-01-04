@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.UI.Popups;
 using Windows.Web.Http;
+using SubSharpLibrary.Exceptions;
 
 namespace SubSharpLibrary.Client
 {
@@ -136,20 +137,74 @@ namespace SubSharpLibrary.Client
         {
 
             action = "ping.view";
-            return gen_SubResponse();
+            return gen_SubResponse(action, null);
         }
 
-        private SubResponse gen_SubResponse()
+        private SubResponse gen_SubResponse(string action, string[] parameters)
         {
+            String saveParam = null;
+
+            if (parameters != null)
+            {
+                if (parameters.Count() > 1 && parameters.Count() % 2 == 0)
+                {
+                    saveParam = this.parameters;
+
+                    for (int i = 0; i < parameters.Count() - 1; i += 2)
+                    {
+                        this.parameters += "&" + parameters[i] + "=" + parameters[i + 1];
+                    }
+
+                    
+                }
+                else
+                {
+                    // throw SubSharp Exception
+                    throw new SubSharpException("Parameters are not even or greater than one", SubSharpException.ErrorCode.GENERIC_SUBSHARP_EXCEPTION);
+                }
+               
+            }
+
+
             String http = this.url + action + this.parameters;
-            
+
             Debug.WriteLine("URL = " + http);
             var get = get_HTML(http).Result;
 
             // dispose of actions and paremeters
             action = "";
-            
+            if (!String.IsNullOrEmpty(saveParam))
+            {
+                this.parameters = saveParam;
+            }
             return new SubResponse(get);
+
+        }
+
+        /// <summary>
+        /// Helper to add params to new string of Parameters
+        /// </summary>
+        /// <param name="parameters"></param>
+        private String get_added_Parameters(string[] parameters){
+
+            return null;
+        }
+
+        /// <summary>
+        /// A dictionary of album elements 
+        /// Key = KeyType of attribute.value in album element tag
+        /// Value =  Dict< Attribute.Name , Attribute.Value >
+        /// </summary>
+        /// <param name="keyType"></param>
+        /// <param name="id"></param>
+        /// <returns> a dictionary of nested albums keyed by KeyType</returns>
+        public Dictionary<string, Dictionary<string, string>> getArtist(String keyType, String id)
+        {
+
+            action = "getArtist.view";
+            
+            string[] parameters = { "id", id };
+            return  gen_SubResponse(action, parameters).Result_To_Attribute_Dict("album", keyType);
         }
 
         /// <summary>
@@ -161,7 +216,7 @@ namespace SubSharpLibrary.Client
         {
             action = "getArtists.view";
             
-            return gen_SubResponse().Result_To_Attribute_Dict("artist", keyType);
+            return gen_SubResponse(action, null).Result_To_Attribute_Dict("artist", keyType);
             
             
         }
