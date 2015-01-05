@@ -5,6 +5,10 @@ using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text;
+using Windows.Foundation;
+using Windows.Networking.BackgroundTransfer;
+using Windows.Storage;
+using System.Threading.Tasks;
 
 namespace SubSharpLibrary.Tests
 {
@@ -25,7 +29,7 @@ namespace SubSharpLibrary.Tests
 
         // for Testing ON Active Server -- Check Daily
 
-        private static int Total_Artist = 326;
+        private static int Total_Artist = 327;
         private static int Total_Test_Album = 15;
         private static String Test_Artist_Id = "721";
 
@@ -94,7 +98,66 @@ namespace SubSharpLibrary.Tests
 
         }
 
+        // Stream must be testing using WP8.1 application
+        // Here for show
+        [TestMethod]
+        public void test_Stream_No_Work()
+        {
+            
+            BackgroundDownloader bg = new BackgroundDownloader();
 
+
+            // Get the local folder.
+            StorageFolder local = Windows.Storage.ApplicationData.Current.LocalFolder;
+
+            // Create a new folder name DataFolder.
+
+            String msg = "";
+
+            var File = Create_File(msg, local).Result;
+
+            
+
+            var Download = sharp.test_Stream("TestFile1", "DataFile.txt", 320, "mp3", true, bg, null);
+
+            
+            
+            msg += "\n Download To String " + Download.ToString();
+            //msg += "\n File Name" + Download.ResultFile.Name.ToString();
+            
+
+            msg += "\n Method Donwload -- " + Download.Method.ToString();
+            msg += "\n Progress" + Download.Progress;
+
+            
+            msg += "\n Properties -- " + File.Properties.ToString();
+            msg += "\n -- path " + File.Path;
+            msg += "\n -- content type " + File.ContentType;
+            msg += "\n -- attributes " + File.Attributes;
+            Debug.WriteLine(msg);
+
+            Guid x = Guid.NewGuid();
+            Debug.WriteLine(x.ToString());
+            // start test Download
+
+
+        }
+
+       
+
+        private static async System.Threading.Tasks.Task<StorageFile> Create_File(String msg, StorageFolder local )
+        {
+
+            var dataFolder = await local.CreateFolderAsync("DataFolder",
+                CreationCollisionOption.OpenIfExists);
+
+            // Create a new file named DataFile.txt.
+            var file = await dataFolder.CreateFileAsync("DataFile.txt",
+            CreationCollisionOption.ReplaceExisting);
+
+            msg += "\n FIle Test - " + file.DateCreated + " -- " + file.DisplayName;
+            return file;
+        }
         [TestMethod]
         public void test_getArtist()
         {

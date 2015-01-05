@@ -21,7 +21,7 @@ namespace SubSharpLibrary.Client
     public class SubResponse
     {
         
-        private bool ok;
+        private bool ok = false;
         private XDocument Xresult;
         private const String restApi = "{http://subsonic.org/restapi}subsonic-response";
 
@@ -37,7 +37,7 @@ namespace SubSharpLibrary.Client
             this.Xresult = XDocument.Parse(result);
 
             this.ok = isOk(Xresult);
-
+            Debug.WriteLine(Xresult.Document.ToString());
             if (!ok)
             {
 
@@ -134,6 +134,7 @@ namespace SubSharpLibrary.Client
             if (dict.Keys.Count == 0)
             {
                 Debug.WriteLine("No Keys found for dict using XElementTarget = " + XmlElementTarget);
+                dict = null;
             }
             return dict;
         }
