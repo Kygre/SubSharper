@@ -27,6 +27,19 @@ namespace SubSharpLibrary.Client
         private string[] ag;
 
 
+        public enum Album_List_Type
+        {
+            random,
+            newest,
+            frequent,
+            highest,
+            recent,
+            starred,
+            alphabeticalByName,
+            alphabeticalByArtist,
+            byYear,
+            byGenre
+        }
 
         /**
              * [0] = user
@@ -215,7 +228,8 @@ namespace SubSharpLibrary.Client
         // TODO Allow Async Download Operation Creation
         /// <summary>
         /// Stream a given media file
-        /// <warning>Only supported for audio streaming</warning>
+        /// Returns a Download Operation for Background Data Transferance
+        /// Check should be done to comnfirm stream is writing
         /// </summary>
         /// <param name="downloadFile"></param>
         /// <param name="id"></param>
@@ -224,7 +238,7 @@ namespace SubSharpLibrary.Client
         /// <param name="estimate_Content_Length"></param>
         /// <param name="bg"></param>
         /// <returns>A Download Operation</returns>
-        public DownloadOperation test_Stream(string downloadFile, String id, int maxBitRate, String format, bool estimate_Content_Length,  BackgroundDownloader bg, IStorageFile file)
+        public DownloadOperation test_Stream( String id, int maxBitRate, String format, bool estimate_Content_Length,  BackgroundDownloader bg, IStorageFile file)
         {
 
 
@@ -343,6 +357,170 @@ namespace SubSharpLibrary.Client
             
         }
 
+
+
+        public Dictionary<String, Dictionary<String, String>> getSimiliarSongs(String keyType , String song_id, int count = 10)
+        {
+            if (String.IsNullOrEmpty(song_id))
+            {
+                throw new SubSharpException("< Get similiar songs requested Song id is null or empty! >");
+            }
+
+
+            if (count <= 0)
+            {
+                throw new SubSharpException("Number of Songs cannot be equal to or lesser than zero");
+            }
+
+
+            action = "getSimilarSongs.view";
+
+
+            string[] paramas = { "id", song_id, "count", count.ToString() };
+
+            return gen_SubResponse(action, paramas).Result_To_Attribute_Dict("song", keyType);
+        }
+
+
+        /// <summary>
+        /// Returns a dictionary of similiar songs
+        /// </summary>
+        /// <param name="keyType"></param>
+        /// <param name="song_id"></param>
+        /// <param name="count"> Optional -- </param>
+        /// <returns></returns>
+        public Dictionary<String, Dictionary<String, String>> getSimiliarSongs_2( ref String keyType, String song_id, int count = 50)
+        {
+            if (String.IsNullOrEmpty(song_id))
+            {
+                throw new SubSharpException("< Get similiar songs 2 requested Song id is null or empty! >");
+            }
+
+            
+            if (count <= 0)
+            {
+                throw new SubSharpException("Number of Songs cannot be equal to or lesser than zero");
+            }
+            
+
+            action = "getSimilarSongs2.view";
+
+
+            string[] paramas = { "id", song_id , "count", count.ToString()};
+
+            return gen_SubResponse(action, paramas).Result_To_Attribute_Dict("song", keyType);
+        }
+
+        public Dictionary<String, Dictionary<String, String>> getMusicFolders(String keyType)
+        {
+            action = "getMusicFolders.view";
+
+
+            return gen_SubResponse(action, null).Result_To_Attribute_Dict("musicFolder", keyType);
+        }
+        /// <summary>
+        /// Genres
+        /// </summary>
+        /// <param name="keyType"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public Dictionary<string, Dictionary<string, string>> getGenres(String keyType, String id)
+        {
+
+            action = "getGenres.view";
+
+            
+            return gen_SubResponse(action, null).Result_To_Attribute_Dict("genre", keyType);
+        }
+
+        public Dictionary<string, Dictionary<string, string>> getVideos(String keyType, String id)
+        {
+
+            action = "getVideos.view";
+
+
+            return gen_SubResponse(action, null).Result_To_Attribute_Dict("video", keyType);
+        }
+
+
+
+        /// <summary>
+        /// Get album list 2, which is according to ID3 tags
+        /// </summary>
+        /// <param name="keyType"></param>
+        /// <param name="album_id"></param>
+        /// <returns>a dictionary</returns>
+        public Dictionary<string, Dictionary<string, string>> getAlbumList2(String keyType, Album_List_Type type, int size, int offset, int[] fromToYears, String genre)
+        {
+
+            action = "getAlbumList2.view";
+
+            if (size < 0)
+            {
+                throw new SubSharpException("Size requested is negative", new ArgumentException());
+            }
+            else if(size > 500){
+                
+                size = 500;
+            }
+
+            LinkedList<string> my_Params = new LinkedList<string>();
+
+            my_Params.AddLast("type");
+            my_Params.AddLast(type.ToString());
+
+            
+            my_Params.AddLast("size");
+            my_Params.AddLast(size.ToString());
+            my_Params.AddLast("offset");
+            my_Params.AddLast( offset.ToString() );
+            
+            
+
+            switch (type)
+            {
+                case Album_List_Type.byYear:
+
+                    if (fromToYears != null)
+                    {
+                        my_Params.AddLast("fromYear");
+                        my_Params.AddLast(fromToYears[0].ToString());
+
+                        my_Params.AddLast("ToYear");
+                        my_Params.AddLast(fromToYears[1].ToString());
+
+                    }
+                    break;
+
+                case Album_List_Type.byGenre:
+
+                    my_Params.AddLast("genre");
+                    my_Params.AddLast( genre );
+
+                    break;
+
+
+            }
+                      
+            
+            return gen_SubResponse(action, my_Params.ToArray<String>() ).Result_To_Attribute_Dict("album", keyType);
+        }
+
+        /// <summary>
+        /// Return a dictioanry of keyType and attributes
+        /// KeyType is the attribute field name
+        /// </summary>
+        /// <param name="keyType"></param>
+        /// <param name="id"></param>
+        /// <returns>A dictioanry with dictionary values</returns>
+        public Dictionary<string, Dictionary<string, string>> getAlbum(String keyType, String id)
+        {
+
+            action = "getAlbum.view";
+
+            string[] parameters = { "id", id };
+            return gen_SubResponse(action, parameters).Result_To_Attribute_Dict("song", keyType);
+        }
 
         
         /// <summary>

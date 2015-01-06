@@ -10,6 +10,7 @@ using Windows.Networking.BackgroundTransfer;
 using Windows.Storage;
 using System.Threading.Tasks;
 
+
 namespace SubSharpLibrary.Tests
 {
     [TestClass]
@@ -29,11 +30,15 @@ namespace SubSharpLibrary.Tests
 
         // for Testing ON Active Server -- Check Daily
 
-        private static int Total_Artist = 327;
+        private static int Total_Artist = 341;
         private static int Total_Test_Album = 15;
         private static String Test_Artist_Id = "721";
 
+        private static int Total_Test_Songs = 4;
+        private static String Test_Album_Id = "3341";
 
+        
+        
 
 
         private static SubSharp sharp_beta; // for testing subsonic beta version
@@ -118,7 +123,7 @@ namespace SubSharpLibrary.Tests
 
             
 
-            var Download = sharp.test_Stream("TestFile1", "DataFile.txt", 320, "mp3", true, bg, null);
+            var Download = sharp.test_Stream( "DataFile.txt", 320, "mp3", true, bg, null);
 
             
             
@@ -143,6 +148,7 @@ namespace SubSharpLibrary.Tests
 
         }
 
+
        
 
         private static async System.Threading.Tasks.Task<StorageFile> Create_File(String msg, StorageFolder local )
@@ -158,13 +164,24 @@ namespace SubSharpLibrary.Tests
             msg += "\n FIle Test - " + file.DateCreated + " -- " + file.DisplayName;
             return file;
         }
-        [TestMethod]
-        public void test_getArtist()
-        {
-            var artists = sharp.getArtists("id");
 
-            
-            
+
+
+        [TestMethod]
+        public void test_getAlbum_html_request()
+        {
+          
+            string msg = "Using key --" + Test_Album_Id + "--";
+
+            Debug.WriteLine(msg);
+
+            var result = sharp.getAlbum("id", Test_Album_Id);
+
+            Assert.AreEqual(Total_Test_Songs, result.Count, "Song count not equal");
+        }
+        [TestMethod]
+        public void test_getArtist_html_request()
+        {
             
             string msg = "Using key --" + Test_Artist_Id + "--";
 
@@ -175,13 +192,61 @@ namespace SubSharpLibrary.Tests
             Assert.AreEqual( Total_Test_Album , result.Count, "Albums count not equal");
 
         }
+
+
+        [TestMethod]
+        public void test_get_Similiar_Song2()
+        {
+            String keytag = "id";
+            
+            
+            var response = sharp.getSimiliarSongs_2(ref keytag, Test_Artist_Id);
+
+            
+            Assert.AreEqual( 50 , response.Count);
+        }
+
+
+        [TestMethod]
+        public void test_get_Similiar_Song2_NegativeSongs_Exception()
+        {
+            
+            
+            try
+            {
+                String id = "id";
+                var response = sharp.getSimiliarSongs_2( ref id, Test_Artist_Id, -10);
+                Assert.Fail();
+            }
+            catch (SubSharpException ex)
+            {
+
+                Assert.AreEqual(ex.Message, "Number of Songs cannot be equal to or lesser than zero");
+                Assert.IsTrue(true);
+                
+            }
+
+            
+        }
+
+        [TestMethod]
+        public void test_getAlbumList2()
+        {
+
+            int[] fromTo = null;
+            String genre = null;
+
+            var result = sharp.getAlbumList2("id", SubSharp.Album_List_Type.newest, 10, 0, fromTo, genre);
+            Assert.IsTrue(sharp.ping().get_isOk, "Failed to get Album List 2");
+
+        }
         // check if returns xml containing artists
         // test can total count depending on server
         [TestMethod]
         public void test_getArtists()
         {
             var result = sharp.getArtists("id");
-            Assert.IsTrue(sharp.ping().get_isOk , "Failed to ping");
+            Assert.IsTrue(sharp.ping().get_isOk , "Failed to getArtists");
             Debug.WriteLine("Artist Count = " + result.Keys.Count);
              
             Assert.AreEqual(Total_Artist, result.Keys.Count);
@@ -225,7 +290,7 @@ namespace SubSharpLibrary.Tests
 
             [TestMethod]
             // [ExpectedException(typeof(System.DivideByZeroException))] -- not supported
-            public void test_Constructor_ArgumentException()
+            public void test_Constructor_SubSharpException()
             {
 
                 try
@@ -233,7 +298,7 @@ namespace SubSharpLibrary.Tests
                     var resp = new SubResponse(null);
                     Assert.Fail();
                 }
-                catch (ArgumentException)
+                catch (SubSharpException)
                 {
                     Assert.IsTrue(true);
 
@@ -258,6 +323,18 @@ namespace SubSharpLibrary.Tests
                 Assert.IsTrue(response.get_isOk);
             }
 
+            // lazy test print
+            [TestMethod]
+            public void test_Get_Album()
+            {
+                String xdoc = "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"ok\" version=\"1.8.0\">\r\n<album id=\"11053\" name=\"High Voltage\" coverArt=\"al-11053\" songCount=\"8\" created=\"2004-11-27T20:23:32\" duration=\"2414\" artist=\"AC/DC\" artistId=\"5432\">\r\n<song id=\"71463\" parent=\"71381\" title=\"The Jack\" album=\"High Voltage\" artist=\"AC/DC\" isDir=\"false\" coverArt=\"71381\" created=\"2004-11-08T23:36:11\" duration=\"352\" bitRate=\"128\" size=\"5624132\" suffix=\"mp3\" contentType=\"audio/mpeg\" isVideo=\"false\" path=\"ACDC/High voltage/ACDC - The Jack.mp3\" albumId=\"11053\" artistId=\"5432\" type=\"music\"/>\r\n<song id=\"71464\" parent=\"71381\" title=\"Tnt\" album=\"High Voltage\" artist=\"AC/DC\" isDir=\"false\" coverArt=\"71381\" created=\"2004-11-08T23:36:11\" duration=\"215\" bitRate=\"128\" size=\"3433798\" suffix=\"mp3\" contentType=\"audio/mpeg\" isVideo=\"false\" path=\"ACDC/High voltage/ACDC - TNT.mp3\" albumId=\"11053\" artistId=\"5432\" type=\"music\"/>\r\n<song id=\"71458\" parent=\"71381\" title=\"It's A Long Way To The Top\" album=\"High Voltage\" artist=\"AC/DC\" isDir=\"false\" coverArt=\"71381\" created=\"2004-11-27T20:23:32\" duration=\"315\" bitRate=\"128\" year=\"1976\" genre=\"Rock\" size=\"5037357\" suffix=\"mp3\" contentType=\"audio/mpeg\" isVideo=\"false\" path=\"ACDC/High voltage/ACDC - It's a long way to the top if you wanna rock 'n 'roll.mp3\" albumId=\"11053\" artistId=\"5432\" type=\"music\"/>\r\n<song id=\"71461\" parent=\"71381\" title=\"Rock 'n' Roll Singer.\" album=\"High Voltage\" artist=\"AC/DC\" isDir=\"false\" coverArt=\"71381\" created=\"2004-11-27T20:23:33\" duration=\"303\" bitRate=\"128\" track=\"2\" year=\"1976\" genre=\"Rock\" size=\"4861680\" suffix=\"mp3\" contentType=\"audio/mpeg\" isVideo=\"false\" path=\"ACDC/High voltage/ACDC - Rock N Roll Singer.mp3\" albumId=\"11053\" artistId=\"5432\" type=\"music\"/>\r\n<song id=\"71460\" parent=\"71381\" title=\"Live Wire\" album=\"High Voltage\" artist=\"AC/DC\" isDir=\"false\" coverArt=\"71381\" created=\"2004-11-27T20:23:33\" duration=\"349\" bitRate=\"128\" track=\"4\" year=\"1976\" genre=\"Rock\" size=\"5600206\" suffix=\"mp3\" contentType=\"audio/mpeg\" isVideo=\"false\" path=\"ACDC/High voltage/ACDC - Live Wire.mp3\" albumId=\"11053\" artistId=\"5432\" type=\"music\"/>\r\n<song id=\"71456\" parent=\"71381\" title=\"Can I sit next to you girl\" album=\"High Voltage\" artist=\"AC/DC\" isDir=\"false\" coverArt=\"71381\" created=\"2004-11-27T20:23:32\" duration=\"251\" bitRate=\"128\" track=\"6\" year=\"1976\" genre=\"Rock\" size=\"4028276\" suffix=\"mp3\" contentType=\"audio/mpeg\" isVideo=\"false\" path=\"ACDC/High voltage/ACDC - Can I Sit Next To You Girl.mp3\" albumId=\"11053\" artistId=\"5432\" type=\"music\"/>\r\n<song id=\"71459\" parent=\"71381\" title=\"Little Lover\" album=\"High Voltage\" artist=\"AC/DC\" isDir=\"false\" coverArt=\"71381\" created=\"2004-11-27T20:23:33\" duration=\"339\" bitRate=\"128\" track=\"7\" year=\"1976\" genre=\"Rock\" size=\"5435119\" suffix=\"mp3\" contentType=\"audio/mpeg\" isVideo=\"false\" path=\"ACDC/High voltage/ACDC - Little Lover.mp3\" albumId=\"11053\" artistId=\"5432\" type=\"music\"/>\r\n<song id=\"71462\" parent=\"71381\" title=\"She's Got Balls\" album=\"High Voltage\" artist=\"AC/DC\" isDir=\"false\" coverArt=\"71381\" created=\"2004-11-27T20:23:34\" duration=\"290\" bitRate=\"128\" track=\"8\" year=\"1976\" genre=\"Rock\" size=\"4651866\" suffix=\"mp3\" contentType=\"audio/mpeg\" isVideo=\"false\" path=\"ACDC/High voltage/ACDC - Shes Got Balls.mp3\" albumId=\"11053\" artistId=\"5432\" type=\"music\"/>\r\n</album>\r\n</subsonic-response>";
+
+                var response = new SubResponse(xdoc);
+
+                Debug.WriteLine(response.get_isOk);
+                print(response.Result_To_Attribute_Dict("song", "id"));
+                Assert.IsTrue(response.get_isOk);
+            }
             /// <summary>
             /// Test get to get Albums without HTML Call
             /// </summary>
@@ -588,7 +665,7 @@ namespace SubSharpLibrary.Tests
                 }
             }
             [TestMethod]
-            public void test_UserNotAuthorizedErro()
+            public void test_UserNotAuthorizedError()
             {
                 String anoxdox = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"failed\" version=\"1.1.0\"><error code=\"50\" message=\"Wrong username or password\"/></subsonic-response>";
 

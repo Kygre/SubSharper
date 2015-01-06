@@ -31,7 +31,7 @@ namespace SubSharpLibrary.Client
             // TODO: Complete member initialization
             if (String.IsNullOrEmpty(result))
             {
-                throw new ArgumentException("Subsonic response text is empty!");
+                throw new SubSharpException("Subsonic response text is empty!" , new ArgumentException());
             }
 
             this.Xresult = XDocument.Parse(result);
@@ -139,6 +139,69 @@ namespace SubSharpLibrary.Client
             return dict;
         }
 
+        // FIXME /// Values of elements may contain newlines or return carrage
+        /// <summary>
+        /// Return an array of length 2
+        /// [0] = Dictionary of Element Name and Text
+        /// [1] = Linked List of Dictionary of Attribute Name and Attribute Value -- for each Similiar Song
+        /// 
+        /// If null, indicates is empty
+        /// </summary>
+        /// <param name="Xresult"></param>
+        /// <param name="XmlElementTarget"></param>
+        /// <param name="attrKey"></param>
+        /// <returns></returns>
+        public static void Results_To_Dicts(XDocument Xresult, out Dictionary<String, String> elements, out LinkedList<Dictionary<String, String>> attributes)
+        {
+
+            var first = Xresult.Document.Root;
+
+            var elemtne = first.Elements();
+
+
+            elements = new Dictionary<string, string>();
+            attributes = new LinkedList<Dictionary<string, string>>();
+
+
+            foreach (var xelem in elemtne.Elements())
+            {
+
+                Debug.WriteLine(xelem.Name.ToString());
+
+                if (xelem.HasAttributes)
+                {
+                    // add attribute values
+                    var attrs = new Dictionary<string, string>();
+
+                    foreach (XAttribute attribute in xelem.Attributes())
+                    {
+                        Debug.WriteLine(attribute.Name.ToString());
+                        attrs.Add(attribute.Name.ToString(), attribute.Value.ToString());
+                    }
+                    attributes.AddLast(attrs);
+                }
+                else
+                {
+                    elements.Add(xelem.Name.LocalName.ToString(), xelem.Value.ToString());
+                }
+
+            }
+
+
+
+            if (elements.Count == 0)
+            {
+                elements = null;
+            }
+
+
+            if (attributes.Count == 0)
+            {
+                attributes = null;
+            }
+
+        }
+
         public bool get_isOk
         {
             get
@@ -146,5 +209,10 @@ namespace SubSharpLibrary.Client
                 return ok;
             }
         }
+
+
     }
+
+
+    
 }
