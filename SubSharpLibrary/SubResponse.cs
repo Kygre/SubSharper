@@ -1,5 +1,6 @@
 ﻿using SubSharpLibrary.Exceptions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -94,49 +95,61 @@ namespace SubSharpLibrary.Client
         /// </summary>
         /// <param name="XmlElementTarget"></param>
         /// <returns></returns>
-        public Dictionary<String, Dictionary<String, String>> Result_To_Attribute_Dict(String XmlElementTarget, String attrKey)
+        public LinkedList<Dictionary<String, String>> Result_To_Attribute_Dict(String XmlElementTarget)
         {
 
-            var dict = new Dictionary<String, Dictionary<String, String>>();
+            var list = new LinkedList<Dictionary<String, String>>();
 
             XmlElementTarget = "{http://subsonic.org/restapi}" + XmlElementTarget;
 
+            var descendants = Xresult.Document.Descendants(XmlElementTarget);
 
-            foreach (XElement xe in Xresult.Document.Descendants(XmlElementTarget))
+            if (descendants.Count() > 0)
             {
-                
-                //Debug.WriteLine("Found Element - " + xe.Name);
-                if (xe.HasAttributes)
+                foreach (XElement xe in descendants)
                 {
-                    var temp_dict = new Dictionary<String, String>();
 
-
-                    foreach (XAttribute attribtue in xe.Attributes())
+                    //Debug.WriteLine("Found Element - " + xe.Name);
+                    if (xe.HasAttributes)
                     {
-                        temp_dict.Add(attribtue.Name.ToString(), attribtue.Value.ToString());
+                        var temp_dict = new Dictionary<String, String>();
+
+
+                        foreach (XAttribute attribtue in xe.Attributes())
+                        {
+                            temp_dict.Add(attribtue.Name.ToString(), attribtue.Value.ToString());
+                        }
+
+
+                        list.AddLast(temp_dict);
+                        
+
                     }
+                    else
+                    {
+                        // Get any elements that have text
 
-                    String attr;
-                    temp_dict.TryGetValue(attrKey, out attr);
-
-                    dict.Add(attr, temp_dict);
-
-                }
-                else
-                {
-                    // throw SubShar
-
-
+                        
+                    }
                 }
             }
-
-
-            if (dict.Keys.Count == 0)
+                /*
+            else
+            {
+                throw new SubSharpException("No Attribute Name for keyTag found in " + XmlElementTarget);
+            }
+            
+            */
+            
+            if (list.Count == 0)
             {
                 Debug.WriteLine("No Keys found for dict using XElementTarget = " + XmlElementTarget);
-                dict = null;
+                
             }
-            return dict;
+             
+            
+
+            return list;
         }
 
         // FIXME /// Values of elements may contain newlines or return carrage
@@ -150,11 +163,12 @@ namespace SubSharpLibrary.Client
         /// <param name="Xresult"></param>
         /// <param name="XmlElementTarget"></param>
         /// <param name="attrKey"></param>
-        /// <returns></returns>
-        public static void Results_To_Dicts(XDocument Xresult, out Dictionary<String, String> elements, out LinkedList<Dictionary<String, String>> attributes)
+        /// <returns>out values with data or null</returns>
+        public ICollection[] Results_To_Dicts(out Dictionary<String, String> elements, out LinkedList<Dictionary<String, String>> attributes)
         {
 
-            var first = Xresult.Document.Root;
+            
+            var first = this.Xresult.Document.Root;
 
             var elemtne = first.Elements();
 
@@ -166,7 +180,7 @@ namespace SubSharpLibrary.Client
             foreach (var xelem in elemtne.Elements())
             {
 
-                Debug.WriteLine(xelem.Name.ToString());
+                Debug.WriteLine("Getting Element - " + xelem.Name.ToString());
 
                 if (xelem.HasAttributes)
                 {
@@ -175,7 +189,7 @@ namespace SubSharpLibrary.Client
 
                     foreach (XAttribute attribute in xelem.Attributes())
                     {
-                        Debug.WriteLine(attribute.Name.ToString());
+                        //Debug.WriteLine("Got Attribute - " + attribute.Name.ToString());
                         attrs.Add(attribute.Name.ToString(), attribute.Value.ToString());
                     }
                     attributes.AddLast(attrs);
@@ -191,15 +205,39 @@ namespace SubSharpLibrary.Client
 
             if (elements.Count == 0)
             {
-                elements = null;
+                Debug.WriteLine("Elements is empty");
+                
+            }
+            else
+            {
+                Debug.WriteLine("Printing Dictionary");
+
+                foreach(KeyValuePair<String,String> kvp in elements){
+                    Debug.WriteLine(kvp.Key + " - " + kvp.Value.ToString());
+                }
             }
 
 
             if (attributes.Count == 0)
             {
-                attributes = null;
+                Debug.WriteLine("Attributes is empty - ");
+                
+            }
+            else
+            {
+                Debug.WriteLine("Printing Linked List Dicationaries");
+                foreach (var v in attributes)
+                {
+                    foreach (var kvp in v)
+                    {
+                        Debug.WriteLine(kvp.Key.ToString() + " - " + kvp.Value.ToString());
+                    }
+                }
+
             }
 
+            ICollection[] collect = { elements, attributes };
+            return collect;
         }
 
         public bool get_isOk

@@ -1,5 +1,6 @@
 ﻿using SubSharpLibrary.Exceptions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -129,6 +130,7 @@ namespace SubSharpLibrary.Client
         {
             String saveParam = null;
 
+
             Add_Parameters(parameters, out saveParam);
 
 
@@ -137,7 +139,7 @@ namespace SubSharpLibrary.Client
             Debug.WriteLine("URL = " + http);
             var get = get_HTML(http).Result;
 
-            
+
 
             // dispose of actions and paremeters
             action = "";
@@ -155,7 +157,7 @@ namespace SubSharpLibrary.Client
             Uri uri = null;
             try
             {
-                 uri = new Uri(http);
+                uri = new Uri(http);
             }
             catch (Exception ex)
             {
@@ -169,7 +171,7 @@ namespace SubSharpLibrary.Client
             try
             {
 
-             
+
                 var result = await httpClient.GetStringAsync(uri);
 
                 return result;
@@ -187,13 +189,22 @@ namespace SubSharpLibrary.Client
 
         private void Add_Parameters(string[] parameters, out String saveParam)
         {
+            
+
             if (parameters != null)
             {
-                if (parameters.Count() > 1 && parameters.Count() % 2 == 0)
+
+                int count = parameters.Count();
+
+                if (count == 0)
+                {
+                    saveParam = "";
+                }
+                else if (count % 2 == 0)
                 {
                     saveParam = this.parameters;
 
-                    for (int i = 0; i < parameters.Count() - 1; i += 2)
+                    for (int i = 0; i < count - 1; i += 2)
                     {
                         this.parameters += "&" + parameters[i] + "=" + parameters[i + 1];
                     }
@@ -211,25 +222,18 @@ namespace SubSharpLibrary.Client
             {
                 saveParam = "";
             }
-            
+
         }
 
-        /// <summary>
-        /// Helper to add params to new string of Parameters
-        /// </summary>
-        /// <param name="parameters"></param>
-        private String get_added_Parameters(string[] parameters)
-        {
-
-            return null;
-        }
-
+  
 
         // TODO Allow Async Download Operation Creation
         /// <summary>
         /// Stream a given media file
         /// Returns a Download Operation for Background Data Transferance
         /// Check should be done to comnfirm stream is writing
+        /// 
+        /// All collections return with a collection that may be empty
         /// </summary>
         /// <param name="downloadFile"></param>
         /// <param name="id"></param>
@@ -238,7 +242,7 @@ namespace SubSharpLibrary.Client
         /// <param name="estimate_Content_Length"></param>
         /// <param name="bg"></param>
         /// <returns>A Download Operation</returns>
-        public DownloadOperation test_Stream( String id, int maxBitRate, String format, bool estimate_Content_Length,  BackgroundDownloader bg, IStorageFile file)
+        public DownloadOperation test_Stream(String id, int maxBitRate, String format, bool estimate_Content_Length, BackgroundDownloader bg, IStorageFile file)
         {
 
 
@@ -341,25 +345,167 @@ namespace SubSharpLibrary.Client
                 Debug.WriteLine("CAn timeout - " + in_stream.CanTimeout);
 
                  * */
-                return bg.CreateDownload( uri, file);
+                return bg.CreateDownload(uri, file);
 
 
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex);
-                    throw ex;
+                throw ex;
             }
+
+
+
+
+
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="username"></param>
+        /// <exception cref="SubSharpException">Will throw exception if reuqesting user is not admin</exception>       
+        /// <returns></returns>
+        public LinkedList<Dictionary<string, string>> getPlaylists(string username = "")
+        {
+
+            LinkedList<string> my_Params = new LinkedList<string>();
+
+            if (!String.IsNullOrEmpty(username))
+            {
+                my_Params.AddLast("username");
+                my_Params.AddLast(username);
+            }
+
+
+            action = "getPlaylists.view";
+
+            return gen_SubResponse(action, my_Params.ToArray()).Result_To_Attribute_Dict("playlist");
+           
+
             
+        }
+
+        /// <summary>
+        /// Gets songs by genre
+        /// </summary>
+        /// <param name="genre"></param>
+        /// <param name="count">Optional, must be greater than zero</param>
+        /// <param name="offset">Optional for offsetting pages</param>
+        /// <returns>A linked list of dictionaries for each song element</returns>
+        public LinkedList<Dictionary<String, String>> getSongsByGenre( String genre, int count = 10, int offset = 0)
+        {
+
+            if (String.IsNullOrEmpty(genre))
+            {
+                throw new SubSharpException("Genre is required and is empty");
+            }
+
+            if (count <= 0)
+            {
+                throw new SubSharpException("Count Requested is less than or equal to zero");
+            }
+
             
-            
-            
+            if (offset <= 0)
+            {
+                throw new SubSharpException("Offset Requested is less than or equal to zero");
+            }
+
+            if (count > 500)
+            {
+                count = 500;
+            }
+
+
+            LinkedList<string> my_Params = new LinkedList<string>();
+
+            String[] paramas = { "genre", genre, "count", count.ToString(), "offset", offset.ToString() };
+
+            action = "getSongByGenre.view";
+
+            return gen_SubResponse(action, my_Params.ToArray()).Result_To_Attribute_Dict("song");
             
         }
 
 
+        // TODO Cast hange to (LinkedList<Dictionary<String,String>>)
+        /// <summary>
+        /// Return a linked list with a dictionary foreach random song element
+        /// </summary>
+        /// <param name="size"></param>
+        /// <param name="genre"> From getGenres </param>
+        /// <param name="fromYear"></param>
+        /// <param name="toYear"></param>
+        /// <param name="musicFolderId"> From get Music Folders</param>
+        /// <exception cref="SubSharpException"> Will throw SubSharpException for bad args</exception>
+        /// <returns>A linked list of dictionaries</returns>
+        public  LinkedList<Dictionary<String,String>> getRandomSongs(int size = 10, String genre = "", int fromYear = 0, int toYear = 0, int musicFolderId = -1)
+        {
+            LinkedList<string> my_Params = new LinkedList<string>();
 
-        public Dictionary<String, Dictionary<String, String>> getSimiliarSongs(String keyType , String song_id, int count = 10)
+            if (size <= 0 )
+            {
+                throw new SubSharpException("Requesting number of songs is less than or equal to zero");
+            }
+            else if (size > 500)
+            {
+                size = 500;
+            }
+
+            my_Params.AddLast("size");
+            my_Params.AddLast(size.ToString());
+
+            if (!String.IsNullOrEmpty(genre))
+            {
+                my_Params.AddLast("genre");
+                my_Params.AddLast(genre);
+            }
+
+            if (fromYear < 0)
+            {
+                throw new SubSharpException("From year parameter is negative");
+            }
+            else if (fromYear > 0)
+            {
+                my_Params.AddLast("fromYear");
+                my_Params.AddLast(fromYear.ToString());
+            }
+
+            if (toYear < 0)
+            {
+                throw new SubSharpException("From year parameter is negative");
+            }
+            else if (toYear > 0)
+            {
+                my_Params.AddLast("toYear");
+                my_Params.AddLast(toYear.ToString());
+            }
+
+            if (musicFolderId > 0)
+            {
+                my_Params.AddLast("musicFolderId");
+                my_Params.AddLast(musicFolderId.ToString());
+            }
+
+            action = "getRandomSongs.view";
+
+            return gen_SubResponse(action, my_Params.ToArray()).Result_To_Attribute_Dict("song");
+        }
+
+        
+
+        /// <summary>
+        /// Get Similiar Songs based on folder structure
+        /// </summary>
+        /// <param name="keyType"></param>
+        /// <param name="song_id"> The song id based on Folders</param>
+        /// <param name="count"></param>
+        /// <exception cref="SubSharpException"> Will throw SubSharpException for bad args</exception>
+        /// <returns>A linked list of Dictionaries for each song element</returns>
+        public LinkedList<Dictionary<String, String>> getSimiliarSongs( String song_id, int count = 10)
         {
             if (String.IsNullOrEmpty(song_id))
             {
@@ -377,69 +523,111 @@ namespace SubSharpLibrary.Client
 
 
             string[] paramas = { "id", song_id, "count", count.ToString() };
-
-            return gen_SubResponse(action, paramas).Result_To_Attribute_Dict("song", keyType);
+            
+            return gen_SubResponse(action, paramas).Result_To_Attribute_Dict("song");
         }
 
 
         /// <summary>
-        /// Returns a dictionary of similiar songs
+        /// Returns a Linked List with a dictionary foreach song element
         /// </summary>
-        /// <param name="keyType"></param>
-        /// <param name="song_id"></param>
-        /// <param name="count"> Optional -- </param>
-        /// <returns></returns>
-        public Dictionary<String, Dictionary<String, String>> getSimiliarSongs_2( ref String keyType, String song_id, int count = 50)
+        /// <param name="song_id">Song id based on id3 tags</param>
+        /// <param name="count"></param>
+        /// /// <exception cref="SubSharpException"> Will throw SubSharpException for bad args</exception>
+        /// <returns>A linked list of Dictionaries</returns>
+        public LinkedList<Dictionary<String,String>> getSimiliarSongs_2( String song_id, int count = 50)
         {
             if (String.IsNullOrEmpty(song_id))
             {
                 throw new SubSharpException("< Get similiar songs 2 requested Song id is null or empty! >");
             }
 
-            
+
             if (count <= 0)
             {
                 throw new SubSharpException("Number of Songs cannot be equal to or lesser than zero");
             }
-            
+
 
             action = "getSimilarSongs2.view";
 
 
-            string[] paramas = { "id", song_id , "count", count.ToString()};
+            string[] paramas = { "id", song_id, "count", count.ToString() };
 
-            return gen_SubResponse(action, paramas).Result_To_Attribute_Dict("song", keyType);
+
+            return gen_SubResponse(action, paramas).Result_To_Attribute_Dict("song");
         }
 
-        public Dictionary<String, Dictionary<String, String>> getMusicFolders(String keyType)
+        /// <summary>
+        /// Returns data on Artist as ICollection
+        /// Max count is only a suggestion, it is not guaranteed
+        /// [0] = Text Data  ::
+        /// [1] = Linked List of Dictionary Data for each similiar artist
+        /// </summary>
+        /// <typeparamref name="artist_id"/>
+        /// <param name="count"></param>
+        /// <param name="includeNotPresent">Include artist not present in the library</param>
+        /// <exception cref="SubSharpException"> Will throw SubSharpException for bad args</exception>
+        /// <returns></returns>
+        public ICollection[] getArtistInfo2(ref String artist_id, int count = 20, bool includeNotPresent = false)
+        {
+
+            if (count <= 0)
+            {
+                throw new SubSharpException("Requested count less equal to or less than zero");
+            }
+
+            action = "getArtistInfo2.view";
+
+
+            string[] paramas = { "id", artist_id, "count", count.ToString(), "includeNotPresent", includeNotPresent.ToString() };
+
+            var dict = new Dictionary<string, string>();
+            var linked = new LinkedList<Dictionary<string, string>>();
+
+
+            return gen_SubResponse(action, paramas).Results_To_Dicts(out dict, out linked);
+        }
+
+        public LinkedList<Dictionary<String, String>> getMusicFolders()
         {
             action = "getMusicFolders.view";
 
-
-            return gen_SubResponse(action, null).Result_To_Attribute_Dict("musicFolder", keyType);
+            return  gen_SubResponse(action, null).Result_To_Attribute_Dict("musicFolder");
+            
         }
         /// <summary>
-        /// Genres
+        /// Get genres from library
         /// </summary>
         /// <param name="keyType"></param>
         /// <param name="id"></param>
-        /// <returns></returns>
-        public Dictionary<string, Dictionary<string, string>> getGenres(String keyType, String id)
+        /// <returns>A linked list with a dictionary for each genre element</returns>
+        public LinkedList<Dictionary<String, String>> getGenres()
         {
 
             action = "getGenres.view";
 
-            
-            return gen_SubResponse(action, null).Result_To_Attribute_Dict("genre", keyType);
+
+
+            var dict = new Dictionary<string, string>();
+            var linked = new LinkedList<Dictionary<string, string>>();
+
+
+            return gen_SubResponse(action, null).Result_To_Attribute_Dict("genre");
         }
 
-        public Dictionary<string, Dictionary<string, string>> getVideos(String keyType, String id)
+        public LinkedList<Dictionary<string, string>> getVideos()
         {
 
             action = "getVideos.view";
 
 
-            return gen_SubResponse(action, null).Result_To_Attribute_Dict("video", keyType);
+
+            var dict = new Dictionary<string, string>();
+            var linked = new LinkedList<Dictionary<string, string>>();
+
+
+            return gen_SubResponse(action, null).Result_To_Attribute_Dict("videos");
         }
 
 
@@ -449,8 +637,9 @@ namespace SubSharpLibrary.Client
         /// </summary>
         /// <param name="keyType"></param>
         /// <param name="album_id"></param>
-        /// <returns>a dictionary</returns>
-        public Dictionary<string, Dictionary<string, string>> getAlbumList2(String keyType, Album_List_Type type, int size, int offset, int[] fromToYears, String genre)
+        /// <exception cref="SubSharpException"> Will throw SubSharpException for bad args</exception>
+        /// <returns>A linked list with a dictionary for each album list element</returns>
+        public LinkedList<Dictionary<string, string>> getAlbumList2( Album_List_Type type, int size, int offset, int[] fromToYears, String genre)
         {
 
             action = "getAlbumList2.view";
@@ -459,8 +648,9 @@ namespace SubSharpLibrary.Client
             {
                 throw new SubSharpException("Size requested is negative", new ArgumentException());
             }
-            else if(size > 500){
-                
+            else if (size > 500)
+            {
+
                 size = 500;
             }
 
@@ -469,13 +659,13 @@ namespace SubSharpLibrary.Client
             my_Params.AddLast("type");
             my_Params.AddLast(type.ToString());
 
-            
+
             my_Params.AddLast("size");
             my_Params.AddLast(size.ToString());
             my_Params.AddLast("offset");
-            my_Params.AddLast( offset.ToString() );
-            
-            
+            my_Params.AddLast(offset.ToString());
+
+
 
             switch (type)
             {
@@ -495,15 +685,14 @@ namespace SubSharpLibrary.Client
                 case Album_List_Type.byGenre:
 
                     my_Params.AddLast("genre");
-                    my_Params.AddLast( genre );
+                    my_Params.AddLast(genre);
 
                     break;
 
 
             }
-                      
-            
-            return gen_SubResponse(action, my_Params.ToArray<String>() ).Result_To_Attribute_Dict("album", keyType);
+
+            return gen_SubResponse(action, my_Params.ToArray()).Result_To_Attribute_Dict("song");
         }
 
         /// <summary>
@@ -513,16 +702,16 @@ namespace SubSharpLibrary.Client
         /// <param name="keyType"></param>
         /// <param name="id"></param>
         /// <returns>A dictioanry with dictionary values</returns>
-        public Dictionary<string, Dictionary<string, string>> getAlbum(String keyType, String id)
+        public LinkedList<Dictionary<String, String>> getAlbum(String id)
         {
 
             action = "getAlbum.view";
 
             string[] parameters = { "id", id };
-            return gen_SubResponse(action, parameters).Result_To_Attribute_Dict("song", keyType);
+            return gen_SubResponse(action, parameters).Result_To_Attribute_Dict("song");
         }
 
-        
+
         /// <summary>
         /// A dictionary of album elements 
         /// Key = KeyType of attribute.value in album element tag
@@ -531,13 +720,13 @@ namespace SubSharpLibrary.Client
         /// <param name="keyType"></param>
         /// <param name="id"></param>
         /// <returns> a dictionary of nested albums keyed by KeyType</returns>
-        public Dictionary<string, Dictionary<string, string>> getArtist(String keyType, String id)
+        public LinkedList<Dictionary<String, String>> getArtist( String id)
         {
 
             action = "getArtist.view";
 
             string[] parameters = { "id", id };
-            return gen_SubResponse(action, parameters).Result_To_Attribute_Dict("album", keyType);
+            return gen_SubResponse(action, parameters).Result_To_Attribute_Dict("album");
         }
 
         /// <summary>
@@ -545,16 +734,16 @@ namespace SubSharpLibrary.Client
         /// With key = Atrribute.Value of keyType in artist element tag
         /// </summary>
         /// <returns>a SubResponse containing a Dictionary response</returns>
-        public Dictionary<String, Dictionary<String, String>> getArtists(String keyType)
+        public LinkedList<Dictionary<String, String>> getArtists()
         {
             action = "getArtists.view";
 
-            return gen_SubResponse(action, null).Result_To_Attribute_Dict("artist", keyType);
+            return gen_SubResponse(action, null).Result_To_Attribute_Dict("artist");
 
 
         }
 
-        
+
 
         public static string ToHexString(string str)
         {
@@ -569,26 +758,7 @@ namespace SubSharpLibrary.Client
             return sb.ToString(); // returns: "48656C6C6F20776F726C64" for "Hello world"
         }
 
-        public void print(Dictionary<String, Dictionary<String, String>> dict)
-        {
-            foreach (String name in dict.Keys)
-            {
-                Debug.WriteLine("Key - " + name);
-
-                Dictionary<String, String> args;
-
-                if (dict.TryGetValue(name, out args))
-                {
-                    foreach (KeyValuePair<string, string> kvp in args)
-                    {
-                        Debug.WriteLine(" -- Value " + kvp.Key.ToString() + " -- " + kvp.Value.ToString());
-                    }
-
-                }
-
-
-            }
-        }
+      
     }
 
 }
