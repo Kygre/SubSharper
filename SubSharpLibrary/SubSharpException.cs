@@ -64,7 +64,12 @@ namespace SubSharpLibrary.Exceptions
 
         }
 
+        public SubSharpException(string message, Exception inner, SubSharpException.ErrorCode desiredEnum)
+            : base(message, inner)
+        {
 
+
+        }
         public SubSharpException(string message, SubSharpException.ErrorCode desiredEnum)
             : base(message)
         {
@@ -80,6 +85,10 @@ namespace SubSharpLibrary.Exceptions
         }
 
 
+        public override string ToString()
+        {
+            return "Subsonic return code - " + this.code + "\nMessage: " + this.message;
+        }
 
 
 

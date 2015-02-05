@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Xml.Linq;
+using Windows.UI.Xaml.Media.Imaging;
 
 namespace SubSharpLibrary.Client
 {
@@ -25,6 +26,7 @@ namespace SubSharpLibrary.Client
         private bool ok = false;
         private XDocument Xresult;
         private const String restApi = "{http://subsonic.org/restapi}subsonic-response";
+        
 
         // for Querys that do not return data
         public SubResponse(string result)
@@ -48,7 +50,11 @@ namespace SubSharpLibrary.Client
                         
         }
 
+        // for saving BitmapImage
+        public SubResponse(BitmapImage url)
+        {
 
+        }
         /// <summary>
         /// Creates Error Message and throw SubSharpException
         /// </summary>
@@ -164,7 +170,7 @@ namespace SubSharpLibrary.Client
         /// <param name="XmlElementTarget"></param>
         /// <param name="attrKey"></param>
         /// <returns>out values with data or null</returns>
-        public ICollection[] Results_To_Dicts(out Dictionary<String, String> elements, out LinkedList<Dictionary<String, String>> attributes)
+        public ICollection[] Results_To_Dicts()
         {
 
             
@@ -173,8 +179,8 @@ namespace SubSharpLibrary.Client
             var elemtne = first.Elements();
 
 
-            elements = new Dictionary<string, string>();
-            attributes = new LinkedList<Dictionary<string, string>>();
+            var elements = new Dictionary<string, string>();
+            var attributes = new LinkedList<Dictionary<string, string>>();
 
 
             foreach (var xelem in elemtne.Elements())
@@ -238,6 +244,61 @@ namespace SubSharpLibrary.Client
 
             ICollection[] collect = { elements, attributes };
             return collect;
+        }
+
+        /// <summary>
+        /// Three dictionaries that can be emtpy
+        /// For seperating getStarred into dictionaries of their types
+        /// [0] = Artists :: [1] = Albums :: [2] = Songs
+        /// </summary>
+        /// <returns></returns>
+        public LinkedList<Dictionary<String, String>>[] result_get_all_Descendants( )
+        {
+
+            var first = this.Xresult.Document.Root;
+
+            var elemtne = first.Elements();
+
+            LinkedList<Dictionary<String, String>>[] dicts = { new LinkedList<Dictionary<String, String>>(), new LinkedList<Dictionary<String, String>>(), new LinkedList<Dictionary<String, String>>() };
+
+            int dict_index = 0;
+            foreach (var xelem in elemtne.Elements())
+            {
+
+                Debug.WriteLine("Getting Element - " + xelem.Name.ToString());
+
+                if (xelem.Name.ToString().Equals("artist"))
+                {
+                    dict_index = 0;
+                }
+                if (xelem.Name.ToString().Equals("album"))
+                {
+                    dict_index = 1;
+                }
+                if (xelem.Name.ToString().Equals("song"))
+                {
+                    dict_index = 2;
+                }
+
+
+                if (xelem.HasAttributes)
+                {
+                    // add attribute values
+                    var attrs = new Dictionary<string, string>();
+
+                    foreach (XAttribute attribute in xelem.Attributes())
+                    {
+                        //Debug.WriteLine("Got Attribute - " + attribute.Name.ToString());
+                        attrs.Add(attribute.Name.ToString(), attribute.Value.ToString());
+                    }
+
+                   dicts[dict_index].AddLast(attrs);
+                }
+               
+
+            }
+
+            return dicts;
         }
 
         public bool get_isOk
